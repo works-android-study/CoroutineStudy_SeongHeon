@@ -1,27 +1,35 @@
 package com.worksmobile.study.coroutinestudy_seongheon
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material.*
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material.Button
+import androidx.compose.material.Icon
+import androidx.compose.material.TextField
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.dp
 import com.skydoves.landscapist.glide.GlideImage
 
 @Composable
 fun MainScreen(viewModel: MainViewModel) {
     Column {
         SearchBox(viewModel)
-        SearchResultBox(viewModel)
+        SearchResultBox(3, viewModel)
     }
 }
 
@@ -51,7 +59,21 @@ fun SearchBox(viewModel: MainViewModel) {
 }
 
 @Composable
-fun SearchResultBox(viewModel: MainViewModel) {
-    val searchResult = viewModel.searchResult.observeAsState()
-    GlideImage(imageModel = searchResult.value?.link)
+fun SearchResultBox(columnCount: Int, viewModel: MainViewModel) {
+    val searchResult = viewModel.searchResult
+    val listState = rememberLazyGridState()
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(columnCount),
+        state = listState,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        itemsIndexed(searchResult) { _, value ->
+            GlideImage(
+                imageModel = value.link,
+                modifier = Modifier
+                    .height(150.dp)
+            )
+        }
+    }
 }
