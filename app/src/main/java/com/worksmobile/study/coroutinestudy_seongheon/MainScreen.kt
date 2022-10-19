@@ -1,13 +1,12 @@
 package com.worksmobile.study.coroutinestudy_seongheon
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.material.Button
 import androidx.compose.material.Icon
 import androidx.compose.material.TextField
@@ -15,15 +14,14 @@ import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.skydoves.landscapist.glide.GlideImage
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 fun MainScreen(viewModel: MainViewModel) {
@@ -52,7 +50,7 @@ fun SearchBox(viewModel: MainViewModel) {
             )
         )
 
-        Button(onClick = { viewModel.searchImages() }) {
+        Button(onClick = { viewModel.handleQuery() }) {
             Text(text = "Search")
         }
     }
@@ -60,7 +58,7 @@ fun SearchBox(viewModel: MainViewModel) {
 
 @Composable
 fun SearchResultBox(columnCount: Int, viewModel: MainViewModel) {
-    val searchResult = viewModel.searchResult
+    val searchResult = viewModel.pagingDataFlow.collectAsLazyPagingItems()
     val listState = rememberLazyGridState()
 
     LazyVerticalGrid(
@@ -68,12 +66,37 @@ fun SearchResultBox(columnCount: Int, viewModel: MainViewModel) {
         state = listState,
         modifier = Modifier.fillMaxWidth()
     ) {
-        itemsIndexed(searchResult) { _, value ->
+        itemsIndexed(searchResult.itemSnapshotList) { _, value ->
             GlideImage(
-                imageModel = value.link,
+                imageModel = value?.link,
                 modifier = Modifier
                     .height(150.dp)
             )
         }
+    }
+
+    EndlessListHandler(listState = listState, buffer = 2) {
+        Log.d(":::", "eod")
+    }
+}
+
+@Composable
+fun EndlessListHandler(listState: LazyGridState, buffer: Int, callback: () -> Unit) {
+    val loadMore = remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val totalItemNum = layoutInfo.totalItemsCount
+            val lastVisibleItemIndex = (layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1
+
+            lastVisibleItemIndex > (totalItemNum - buffer)
+        }
+    }
+
+    LaunchedEffect(key1 = loadMore) {
+        snapshotFlow { loadMore.value }
+            .distinctUntilChanged()
+            .collect {
+                callback()
+            }
     }
 }
