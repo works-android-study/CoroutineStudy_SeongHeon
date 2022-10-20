@@ -14,7 +14,7 @@ class SearchRepository @Inject constructor(
         return Pager(
             config = PagingConfig(
                 pageSize = SearchDataSource.defaultDisplay,
-                enablePlaceholders = false
+                enablePlaceholders = true
             ),
             pagingSourceFactory = {
                 SearchDataSource(query, service)

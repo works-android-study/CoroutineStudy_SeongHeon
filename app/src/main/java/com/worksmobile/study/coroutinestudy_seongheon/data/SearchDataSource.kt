@@ -25,10 +25,11 @@ class SearchDataSource(
                 TokenManager.CLIENT_ID,
                 TokenManager.CLIENT_SECRET,
                 query,
-                start
+                defaultDisplay,
+                start = start
             )
             val items = response.items
-            val nextKey = getNextKey(items, start, params.loadSize)
+            val nextKey = getNextKey(items, start)
             val prevKey = getPrevKey(start)
 
             LoadResult.Page(response.items, prevKey, nextKey)
@@ -37,11 +38,11 @@ class SearchDataSource(
         }
     }
 
-    private fun getNextKey(items: List<Item>, start: Int, loadSize: Int): Int? {
+    private fun getNextKey(items: List<Item>, start: Int): Int? {
         return if (items.isEmpty()) {
             null
         } else {
-            start + loadSize
+            start + defaultDisplay
         }
     }
 

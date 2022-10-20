@@ -60,20 +60,21 @@ fun SearchBox(viewModel: MainViewModel) {
 fun SearchResultBox(columnCount: Int, viewModel: MainViewModel) {
     val searchResult = viewModel.pagingDataFlow.collectAsLazyPagingItems()
     val listState = rememberLazyGridState()
-
+    
     LazyVerticalGrid(
         columns = GridCells.Fixed(columnCount),
         state = listState,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        itemsIndexed(searchResult.itemSnapshotList) { _, value ->
-            GlideImage(
-                imageModel = value?.link,
-                modifier = Modifier
-                    .height(150.dp)
-            )
+        modifier = Modifier.fillMaxWidth(),
+        content = {
+            items(searchResult.itemCount) { index ->
+                GlideImage(
+                    imageModel = searchResult[index]?.link,
+                    modifier = Modifier
+                        .height(150.dp)
+                )
+            }
         }
-    }
+    )
 
     EndlessListHandler(listState = listState, buffer = 2) {
         Log.d(":::", "eod")
