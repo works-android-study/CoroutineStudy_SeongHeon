@@ -16,4 +16,4 @@ data class Item(
     val thumbnail: String,
     @SerializedName("sizeheight") val sizeHeight: Int,
     @SerializedName("sizewidth") val sizeWidth: Int
-)
+): java.io.Serializable
