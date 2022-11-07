@@ -31,4 +31,10 @@ class MainViewModel @Inject constructor(
             queryFlow.emit(searchQuery.value)
         }
     }
+
+    fun TestFunction() {
+        val Test = searchQuery.component1();
+        val Test2 = searchQuery.component1().plus(1).plus(2).plus(3).plus(4).plus(5).length.and(1).and(2)
+    }
+
 }
