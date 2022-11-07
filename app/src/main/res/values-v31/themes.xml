@@ -4,7 +4,7 @@
     <style name="Theme.CoroutineStudy_SeongHeon" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowSplashScreenBackground">@color/white</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
-        <item name="android:windowSplashScreenAnimationDuration">2000</item>
+        <item name="android:windowSplashScreenAnimationDuration">5000</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@color/teal_700</item>
     </style>
 </resources>
