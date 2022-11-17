@@ -7,8 +7,9 @@ import com.worksmobile.study.coroutinestudy_seongheon.api.SearchService
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class SearchRepository @Inject constructor(
-    private val service: SearchService
+class ImageRepository @Inject constructor(
+    private val service: SearchService,
+    private val imageDao: BookmarkDAO
 ) {
     fun searchImages(query: String): Flow<PagingData<Item>> {
         return Pager(
@@ -18,6 +19,18 @@ class SearchRepository @Inject constructor(
             ),
             pagingSourceFactory = {
                 SearchDataSource(query, service)
+            }
+        ).flow
+    }
+
+    fun selectBookmarkImage(): Flow<PagingData<Item>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = SearchDataSource.defaultDisplay,
+                enablePlaceholders = true
+            ),
+            pagingSourceFactory = {
+                BookmarkDataSource(imageDao)
             }
         ).flow
     }
