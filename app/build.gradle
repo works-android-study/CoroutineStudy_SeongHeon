@@ -92,7 +92,7 @@ dependencies {
     implementation "androidx.paging:paging-rxjava2:$paging_version"
     implementation "androidx.paging:paging-rxjava3:$paging_version"
     implementation "androidx.paging:paging-guava:$paging_version"
-    implementation "androidx.paging:paging-compose:1.0.0-alpha16"
+    implementation "androidx.paging:paging-compose:1.0.0-alpha17"
 
     //for compose preview
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
@@ -106,5 +106,4 @@ dependencies {
     implementation "androidx.room:room-rxjava3:$room_version"
     implementation "androidx.room:room-guava:$room_version"
     testImplementation "androidx.room:room-testing:$room_version"
-    implementation "androidx.room:room-paging:2.5.0-beta01"
 }

@@ -5,9 +5,9 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.worksmobile.study.coroutinestudy_seongheon.data.Item
 
-@Entity
+@Entity(tableName = "bookmark")
 data class BookmarkItem(
-    @PrimaryKey(autoGenerate = true) val uid: Int,
+    @PrimaryKey(autoGenerate = true) val uid: Int = 0,
     @ColumnInfo(name = "item") val item: Item,
-    @ColumnInfo(name = "time") val bookmarkCreatedTime: Long
+    @ColumnInfo(name = "time") val bookmarkCreatedTime: Long = System.currentTimeMillis()
 )
