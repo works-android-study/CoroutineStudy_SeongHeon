@@ -6,13 +6,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,12 +28,47 @@ import com.skydoves.landscapist.glide.GlideImage
 import com.worksmobile.study.coroutinestudy_seongheon.MainActivity.Companion.DETAIL_SCREEN_KEY
 import com.worksmobile.study.coroutinestudy_seongheon.MainViewModel
 import com.worksmobile.study.coroutinestudy_seongheon.data.Item
+import com.worksmobile.study.coroutinestudy_seongheon.data.SearchResultType
+import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadState
 
 @Composable
 fun MainScreen(viewModel: MainViewModel, navController: NavController) {
-    Column {
-        SearchBox(viewModel)
-        SearchResultBox(3, viewModel, navController)
+    val downloadProgress by viewModel.downloadProgressStateFlow.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) {
+        LaunchedEffect(true) {
+            //https://www.valueof.io/blog/stateflow-vs-sharedflow-jetpack-compose
+            viewModel.downloadEventFlow.collect { state ->
+                when (state) {
+                    DownloadState.START -> snackbarHostState.showSnackbar(
+                        "Start Download!!",
+                        duration = SnackbarDuration.Short
+                    )
+                    DownloadState.PROGRESS -> {
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        snackbarHostState.showSnackbar(
+                            "$downloadProgress% in Progress",
+                            duration = SnackbarDuration.Indefinite
+                        )
+                    }
+                    DownloadState.COMPLETE -> {
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        snackbarHostState.showSnackbar(
+                            "Download Completed",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
+            }
+        }
+
+        Column {
+            SearchBox(viewModel)
+            SearchResultBox(3, viewModel, navController)
+        }
     }
 }
 
@@ -67,6 +100,7 @@ fun SearchBox(viewModel: MainViewModel) {
 @Composable
 fun SearchResultBox(columnCount: Int, viewModel: MainViewModel, navController: NavController) {
     val searchResult = viewModel.pagingDataFlow.collectAsLazyPagingItems()
+    val searchResultType by remember { viewModel.searchResultType }
     val listState = rememberLazyGridState()
 
     LazyVerticalGrid(
@@ -86,6 +120,7 @@ fun SearchResultBox(columnCount: Int, viewModel: MainViewModel, navController: N
                         },
                         modifier = Modifier.zIndex(1f)
                     ) {
+                        if (searchResultType == SearchResultType.LOCAL) return@IconToggleButton
                         val tint = if (checkedState.value) Color.Red else Color.Black
 
                         Image(
@@ -95,7 +130,7 @@ fun SearchResultBox(columnCount: Int, viewModel: MainViewModel, navController: N
                             alignment = Alignment.TopEnd
                         )
                     }
-                    SearchResultItem(item = item, navController)
+                    SearchResultItem(item = item, viewModel, navController)
                 }
             }
         }
@@ -103,7 +138,7 @@ fun SearchResultBox(columnCount: Int, viewModel: MainViewModel, navController: N
 }
 
 @Composable
-fun SearchResultItem(item: Item, navController: NavController) {
+fun SearchResultItem(item: Item, viewModel: MainViewModel, navController: NavController) {
     GlideImage(
         imageModel = item.link,
         modifier = Modifier
@@ -112,6 +147,9 @@ fun SearchResultItem(item: Item, navController: NavController) {
                 detectTapGestures(
                     onTap = {
                         navController.navigate("${DETAIL_SCREEN_KEY}/${Gson().toJson(item.getEncodedItem())}")
+                    },
+                    onLongPress = {
+                        viewModel.downloadImage(item)
                     }
                 )
             }

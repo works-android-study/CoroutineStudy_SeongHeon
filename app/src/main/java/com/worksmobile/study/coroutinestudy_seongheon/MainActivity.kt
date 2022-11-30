@@ -17,6 +17,7 @@ import com.worksmobile.study.coroutinestudy_seongheon.compose.DetailScreen
 import com.worksmobile.study.coroutinestudy_seongheon.compose.MainScreen
 import com.worksmobile.study.coroutinestudy_seongheon.ui.theme.CoroutineStudy_SeongHeonTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
