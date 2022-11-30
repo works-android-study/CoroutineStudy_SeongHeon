@@ -1,9 +1,8 @@
 package com.worksmobile.study.coroutinestudy_seongheon.download
 
-enum class DownloadState {
-    COMPLETE,
-    START,
-    PROGRESS,
-    INIT,
-    DOWNLOAD_FAIL
+sealed class DownloadState {
+    class Complete(val uri: String?) : DownloadState()
+    class Progress(val progress: Int? = 0) : DownloadState()
+    object Start : DownloadState()
+    object Fail : DownloadState()
 }

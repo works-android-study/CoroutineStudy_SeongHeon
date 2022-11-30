@@ -36,5 +36,6 @@ class DownloadCenter @Inject constructor(
         const val WORK_NAME = "DOWNLOAD_WORK"
         const val KEY_FOR_TITLE = "LINK"
         const val KEY_FOR_LINK = "LINK"
+        const val KEY_FOR_PROGRESS = "PROGRESS"
     }
 }

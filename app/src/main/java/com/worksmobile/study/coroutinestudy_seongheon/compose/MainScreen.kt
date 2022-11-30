@@ -1,6 +1,7 @@
 package com.worksmobile.study.coroutinestudy_seongheon.compose
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -19,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
@@ -33,8 +36,9 @@ import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadState
 
 @Composable
 fun MainScreen(viewModel: MainViewModel, navController: NavController) {
-    val downloadProgress by viewModel.downloadProgressStateFlow.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val isDownloadStateTextVisible = remember { mutableStateOf(false) }
+    val downloadStateText = remember { mutableStateOf("") }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -43,31 +47,37 @@ fun MainScreen(viewModel: MainViewModel, navController: NavController) {
             //https://www.valueof.io/blog/stateflow-vs-sharedflow-jetpack-compose
             viewModel.downloadEventFlow.collect { state ->
                 when (state) {
-                    DownloadState.START -> snackbarHostState.showSnackbar(
-                        "Start Download!!",
-                        duration = SnackbarDuration.Short
-                    )
-                    DownloadState.PROGRESS -> {
-                        snackbarHostState.currentSnackbarData?.dismiss()
-                        snackbarHostState.showSnackbar(
-                            "$downloadProgress% in Progress",
-                            duration = SnackbarDuration.Indefinite
-                        )
+                    is DownloadState.Start -> {
+                        isDownloadStateTextVisible.value = true
+                        downloadStateText.value = "Download Started!!"
                     }
-                    DownloadState.COMPLETE -> {
-                        snackbarHostState.currentSnackbarData?.dismiss()
-                        snackbarHostState.showSnackbar(
-                            "Download Completed",
-                            duration = SnackbarDuration.Short
-                        )
+                    is DownloadState.Progress -> {
+                        downloadStateText.value = "${state.progress}% in Progress!!"
+                    }
+                    is DownloadState.Complete -> {
+                        isDownloadStateTextVisible.value = false
+                        downloadStateText.value = "Download Completed!! \n uri : ${state.uri} "
+                    }
+                    is DownloadState.Fail -> {
+                        isDownloadStateTextVisible.value = false
+                        downloadStateText.value = "Download Fails"
                     }
                 }
             }
         }
 
-        Column {
-            SearchBox(viewModel)
-            SearchResultBox(3, viewModel, navController)
+        Box {
+            Column {
+                SearchBox(viewModel)
+                SearchResultBox(3, viewModel, navController)
+            }
+            Text(
+                text = downloadStateText.value,
+                modifier = Modifier.zIndex(1f).fillMaxWidth().align(Alignment.BottomCenter).background(Color.DarkGray).padding(10.dp),
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                fontSize = TextUnit.Unspecified
+            )
         }
     }
 }
@@ -106,7 +116,7 @@ fun SearchResultBox(columnCount: Int, viewModel: MainViewModel, navController: N
     LazyVerticalGrid(
         columns = GridCells.Fixed(columnCount),
         state = listState,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().fillMaxHeight(),
         content = {
             items(searchResult.itemCount) { index ->
                 val item = searchResult[index] ?: return@items
@@ -148,7 +158,7 @@ fun SearchResultItem(item: Item, viewModel: MainViewModel, navController: NavCon
                     onTap = {
                         navController.navigate("${DETAIL_SCREEN_KEY}/${Gson().toJson(item.getEncodedItem())}")
                     },
-                    onLongPress = {
+                    onDoubleTap = {
                         viewModel.downloadImage(item)
                     }
                 )

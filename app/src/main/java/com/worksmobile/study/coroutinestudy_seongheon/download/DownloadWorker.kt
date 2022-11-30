@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
@@ -16,6 +17,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.worksmobile.study.coroutinestudy_seongheon.BuildConfig
 import com.worksmobile.study.coroutinestudy_seongheon.R
+import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadCenter.Companion.KEY_FOR_PROGRESS
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
@@ -59,19 +61,34 @@ class DownloadWorker(
         }
     }
 
-    private fun saveFileAndReturnURI(fileName: String, fileUrl: String): Uri? {
+    private suspend fun saveFileAndReturnURI(fileName: String, fileUrl: String): Uri? {
+        var count: Int
+        var total = 0
+        val byteArray = ByteArray(4096)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val contentValues = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                 put(MediaStore.MediaColumns.MIME_TYPE, "image/*")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, "Download/DownloaderDemo")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, "Download/Coroutine_Study")
             }
 
             val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
             return uri?.apply {
-                URL(fileUrl).openStream().use { input ->
-                    context.contentResolver.openOutputStream(uri).use { output ->
-                        input.copyTo(output!!, DEFAULT_BUFFER_SIZE)
+                val connection = URL(fileUrl).openConnection()
+                connection.connect()
+
+                val fileSize = connection.contentLength
+                val inputStream = connection.getInputStream()
+
+                context.contentResolver.openOutputStream(uri).use { outputStream ->
+                    while (run {
+                            count = inputStream.read(byteArray)
+                            count
+                        } != -1) {
+                        total += count
+                        setProgress(workDataOf(KEY_FOR_PROGRESS to (total * 100 / fileSize)))
+                        outputStream?.write(byteArray, 0, count)
                     }
                 }
             }
@@ -80,12 +97,29 @@ class DownloadWorker(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
                 fileName
             )
-            URL(fileUrl).openStream().use { input ->
-                FileOutputStream(target).use { output -> input.copyTo(output) }
+
+            URL(fileUrl).apply {
+                val connection = URL(fileUrl).openConnection()
+                connection.connect()
+
+                val fileSize = connection.contentLength
+                val inputStream = connection.getInputStream()
+
+                FileOutputStream(target).use { outputStream ->
+                    while (run {
+                            count = inputStream.read(byteArray)
+                            count
+                        } != -1) {
+                        total += count
+                        setProgress(workDataOf(KEY_FOR_PROGRESS to (total * 100 / fileSize)))
+                        outputStream.write(byteArray, 0, count)
+                    }
+                }
             }
 
             return target.toUri()
         }
+
     }
 
     companion object {
