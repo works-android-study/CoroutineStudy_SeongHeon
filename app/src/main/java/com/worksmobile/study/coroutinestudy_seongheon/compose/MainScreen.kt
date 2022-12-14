@@ -73,7 +73,12 @@ fun MainScreen(viewModel: MainViewModel, navController: NavController) {
             }
             Text(
                 text = downloadStateText.value,
-                modifier = Modifier.zIndex(1f).fillMaxWidth().align(Alignment.BottomCenter).background(Color.DarkGray).padding(10.dp),
+                modifier = Modifier
+                    .zIndex(1f)
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .background(Color.DarkGray)
+                    .padding(10.dp),
                 color = Color.White,
                 textAlign = TextAlign.Center,
                 fontSize = TextUnit.Unspecified
@@ -84,12 +89,13 @@ fun MainScreen(viewModel: MainViewModel, navController: NavController) {
 
 @Composable
 fun SearchBox(viewModel: MainViewModel) {
-    var text by remember { viewModel.searchQuery }
+    val searchQueryState = viewModel.searchQueryFlow.collectAsState()
+    val text by remember { searchQueryState }
 
     Row {
         TextField(
             value = text,
-            onValueChange = { text = it },
+            onValueChange = { viewModel.changeQuery(it) },
             label = { Text("Search") },
             leadingIcon = { Icon(imageVector = Icons.Filled.Search, contentDescription = null) },
             modifier = Modifier
@@ -110,13 +116,16 @@ fun SearchBox(viewModel: MainViewModel) {
 @Composable
 fun SearchResultBox(columnCount: Int, viewModel: MainViewModel, navController: NavController) {
     val searchResult = viewModel.pagingDataFlow.collectAsLazyPagingItems()
-    val searchResultType by remember { viewModel.searchResultType }
+    val searchResultTypeState = viewModel.searchResultTypeFlow.collectAsState()
+    val searchResultType by remember { searchResultTypeState }
     val listState = rememberLazyGridState()
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(columnCount),
         state = listState,
-        modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
         content = {
             items(searchResult.itemCount) { index ->
                 val item = searchResult[index] ?: return@items

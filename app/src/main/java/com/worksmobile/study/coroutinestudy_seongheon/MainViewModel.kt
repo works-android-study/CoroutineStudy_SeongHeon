@@ -1,6 +1,5 @@
 package com.worksmobile.study.coroutinestudy_seongheon
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.cachedIn
@@ -23,21 +22,22 @@ class MainViewModel @Inject constructor(
     private val repository: ImageRepository,
     private val downloadCenter: DownloadCenter
 ) : ViewModel() {
-    val searchQuery = mutableStateOf("")
-    val searchResultType = mutableStateOf(SearchResultType.UNKNOWN)
+    private val _searchQueryFlow = MutableStateFlow("")
+    val searchQueryFlow = _searchQueryFlow.asStateFlow()
 
-    private val queryFlow = MutableSharedFlow<String>()
+    private val _searchResultTypeFlow = MutableStateFlow(SearchResultType.UNKNOWN)
+    val searchResultTypeFlow = _searchResultTypeFlow.asStateFlow()
 
     private val _downloadEventFlow = MutableSharedFlow<DownloadState>()
     val downloadEventFlow = _downloadEventFlow.asSharedFlow()
 
-    val pagingDataFlow = queryFlow
+    private val searchButtonEventFlow = MutableSharedFlow<String>()
+
+    val pagingDataFlow = searchButtonEventFlow
         .flatMapLatest { query ->
             if (query.isEmpty()) {
-                searchResultType.value = SearchResultType.LOCAL
                 selectBookmarkImage()
             } else {
-                searchResultType.value = SearchResultType.REMOTE
                 searchImages(query)
             }
         }
@@ -51,9 +51,17 @@ class MainViewModel @Inject constructor(
 
     private fun deleteBookmarkImage(item: Item) = repository.deleteBookmarkImage(item)
 
+    fun changeQuery(newQuery: String) {
+        _searchQueryFlow.value = newQuery
+    }
+
     fun handleQuery() {
         viewModelScope.launch {
-            queryFlow.emit(searchQuery.value)
+            searchQueryFlow.value.let {
+                searchButtonEventFlow.emit(it)
+                if (it.isEmpty()) _searchResultTypeFlow.value = SearchResultType.LOCAL
+                else _searchResultTypeFlow.value = SearchResultType.REMOTE
+            }
         }
     }
 
@@ -68,12 +76,22 @@ class MainViewModel @Inject constructor(
         downloadCenter.startDownload(item) { workInfo ->
             viewModelScope.launch {
                 val resultUri = workInfo?.outputData?.getString(KEY_FOR_LINK)
-                val progress = workInfo?.progress?.getInt(KEY_FOR_PROGRESS,0)
+                val progress = workInfo?.progress?.getInt(KEY_FOR_PROGRESS, 0)
                 when (workInfo?.state) {
-                    WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> _downloadEventFlow.emit(DownloadState.Fail)
-                    WorkInfo.State.SUCCEEDED -> _downloadEventFlow.emit(DownloadState.Complete(resultUri))
+                    WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> _downloadEventFlow.emit(
+                        DownloadState.Fail
+                    )
+                    WorkInfo.State.SUCCEEDED -> _downloadEventFlow.emit(
+                        DownloadState.Complete(
+                            resultUri
+                        )
+                    )
                     WorkInfo.State.ENQUEUED -> _downloadEventFlow.emit(DownloadState.Start)
-                    WorkInfo.State.RUNNING -> _downloadEventFlow.emit(DownloadState.Progress(progress))
+                    WorkInfo.State.RUNNING -> _downloadEventFlow.emit(
+                        DownloadState.Progress(
+                            progress
+                        )
+                    )
                     else -> Unit
                 }
             }
