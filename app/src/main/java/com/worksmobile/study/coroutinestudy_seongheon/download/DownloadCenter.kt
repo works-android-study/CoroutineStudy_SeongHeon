@@ -16,7 +16,7 @@ class DownloadCenter @Inject constructor(
 ) {
     private val workManager = WorkManager.getInstance(context)
 
-    fun startDownload(item: Item, onStateChanged: (WorkInfo?) -> Unit) {
+    fun startDownload(item: Item, downloadListener: DownloadListener) {
         val request = OneTimeWorkRequestBuilder<DownloadWorker>().apply {
             setInputData(
                 workDataOf(
@@ -28,7 +28,7 @@ class DownloadCenter @Inject constructor(
 
         workManager.enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.REPLACE, request)
         workManager.getWorkInfoByIdLiveData(request.id).observeForever { workInfo ->
-            onStateChanged(workInfo)
+            downloadListener.onDownloadStateChanged(workInfo)
         }
     }
 

@@ -10,6 +10,7 @@ import com.worksmobile.study.coroutinestudy_seongheon.data.SearchResultType
 import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadCenter
 import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadCenter.Companion.KEY_FOR_LINK
 import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadCenter.Companion.KEY_FOR_PROGRESS
+import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadListener
 import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -65,36 +66,37 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun handleBookmark(item: Item, isBookmark: Boolean) {
+    fun handleBookmark(item: Item, isBookmark: Boolean) =
         viewModelScope.launch(Dispatchers.IO) {
             if (isBookmark) insertBookmarkImage(item)
             else deleteBookmarkImage(item)
         }
-    }
 
     fun downloadImage(item: Item) {
-        downloadCenter.startDownload(item) { workInfo ->
-            viewModelScope.launch {
-                val resultUri = workInfo?.outputData?.getString(KEY_FOR_LINK)
-                val progress = workInfo?.progress?.getInt(KEY_FOR_PROGRESS, 0)
-                when (workInfo?.state) {
-                    WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> _downloadEventFlow.emit(
-                        DownloadState.Fail
-                    )
-                    WorkInfo.State.SUCCEEDED -> _downloadEventFlow.emit(
-                        DownloadState.Complete(
-                            resultUri
+        downloadCenter.startDownload(item, object : DownloadListener {
+            override fun onDownloadStateChanged(workInfo: WorkInfo?) {
+                viewModelScope.launch {
+                    val resultUri = workInfo?.outputData?.getString(KEY_FOR_LINK)
+                    val progress = workInfo?.progress?.getInt(KEY_FOR_PROGRESS, 0)
+                    when (workInfo?.state) {
+                        WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> _downloadEventFlow.emit(
+                            DownloadState.Fail
                         )
-                    )
-                    WorkInfo.State.ENQUEUED -> _downloadEventFlow.emit(DownloadState.Start)
-                    WorkInfo.State.RUNNING -> _downloadEventFlow.emit(
-                        DownloadState.Progress(
-                            progress
+                        WorkInfo.State.SUCCEEDED -> _downloadEventFlow.emit(
+                            DownloadState.Complete(
+                                resultUri
+                            )
                         )
-                    )
-                    else -> Unit
+                        WorkInfo.State.ENQUEUED -> _downloadEventFlow.emit(DownloadState.Start)
+                        WorkInfo.State.RUNNING -> _downloadEventFlow.emit(
+                            DownloadState.Progress(
+                                progress
+                            )
+                        )
+                        else -> Unit
+                    }
                 }
             }
-        }
+        })
     }
 }
