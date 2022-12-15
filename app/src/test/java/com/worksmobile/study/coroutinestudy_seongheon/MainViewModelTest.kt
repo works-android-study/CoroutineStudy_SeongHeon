@@ -9,12 +9,14 @@ import com.worksmobile.study.coroutinestudy_seongheon.data.ImageRepository
 import com.worksmobile.study.coroutinestudy_seongheon.data.Item
 import com.worksmobile.study.coroutinestudy_seongheon.data.SearchResultType
 import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadCenter
+import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadListener
 import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -24,6 +26,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import kotlin.time.ExperimentalTime
 
@@ -93,22 +96,111 @@ class MainViewModelTest {
     }
 
     @Test
-    @DisplayName("이미지 다운로드 테스트 성공")
+    @DisplayName("이미지 다운로드 시, DownloadCenter 메소드 호출")
     fun test_download_image_download_center() = runTest {
         val item = Item("title1", "link", "thumbnail", 0, 0)
+
+        mainViewModel.downloadImage(item)
+        verify(mockDownloadCenter).startDownload(eq(item), any())
+    }
+
+    @Test
+    @DisplayName("이미지 다운로드 성공")
+    fun test_download_image_success() = runTest {
+        val item = Item("title1", "link", "thumbnail", 0, 0)
         val mockWorkInfo = mock(WorkInfo::class.java)
+        val mockOutputData = mock(Data::class.java)
+
+        `when`(mockOutputData.getString(any())).thenReturn("test uri")
         `when`(mockWorkInfo.state).thenReturn(WorkInfo.State.SUCCEEDED)
-        `when`(mockWorkInfo.outputData).thenReturn(Data.EMPTY)
-        `when`(mockWorkInfo.outputData.getString(DownloadCenter.KEY_FOR_LINK)).thenReturn("test uri")
-        `when`(mockDownloadCenter.startDownload(item, any())).thenAnswer {
-            it.getArgument<(WorkInfo?) -> Unit>(0).invoke(mockWorkInfo)
+        `when`(mockWorkInfo.outputData).thenReturn(mockOutputData)
+
+        `when`(mockDownloadCenter.startDownload(eq(item), any())).thenAnswer{
+            it.getArgument<DownloadListener>(1).onDownloadStateChanged(mockWorkInfo)
+         }
+
+        mainViewModel.downloadEventFlow.test {
+            mainViewModel.downloadImage(item)
+            val result = awaitItem()
+            assertTrue(result is DownloadState.Complete)
+            assertEquals("test uri", (result as DownloadState.Complete).uri)
+        }
+    }
+
+    @Test
+    @DisplayName("이미지 다운로드 시작")
+    fun test_download_image_start() = runTest {
+        val item = Item("title1", "link", "thumbnail", 0, 0)
+        val mockWorkInfo = mock(WorkInfo::class.java)
+
+        `when`(mockWorkInfo.state).thenReturn(WorkInfo.State.ENQUEUED)
+
+        `when`(mockDownloadCenter.startDownload(eq(item), any())).thenAnswer{
+            it.getArgument<DownloadListener>(1).onDownloadStateChanged(mockWorkInfo)
         }
 
         mainViewModel.downloadEventFlow.test {
             mainViewModel.downloadImage(item)
             val result = awaitItem()
-
-            assertEquals(DownloadState.Complete("test uri"), result)
+            assertTrue(result is DownloadState.Start)
         }
+    }
+
+    @Test
+    @DisplayName("이미지 다운로드 진행중")
+    fun test_download_image_progress() = runTest {
+        val item = Item("title1", "link", "thumbnail", 0, 0)
+        val mockWorkInfo = mock(WorkInfo::class.java)
+        val mockOutputData = mock(Data::class.java)
+
+        `when`(mockOutputData.getInt(any(), eq(0))).thenReturn(50)
+        `when`(mockWorkInfo.state).thenReturn(WorkInfo.State.RUNNING)
+        `when`(mockWorkInfo.progress).thenReturn(mockOutputData)
+
+        `when`(mockDownloadCenter.startDownload(eq(item), any())).thenAnswer{
+            it.getArgument<DownloadListener>(1).onDownloadStateChanged(mockWorkInfo)
+        }
+
+        mainViewModel.downloadEventFlow.test {
+            mainViewModel.downloadImage(item)
+            val result = awaitItem()
+            assertTrue(result is DownloadState.Progress)
+            assertEquals(50, (result as DownloadState.Progress).progress)
+        }
+    }
+
+    @Test
+    @DisplayName("이미지 다운로드 실패")
+    fun test_download_image_failure() = runTest {
+        val item = Item("title1", "link", "thumbnail", 0, 0)
+        val mockWorkInfo = mock(WorkInfo::class.java)
+
+        `when`(mockWorkInfo.state).thenReturn(WorkInfo.State.FAILED)
+
+        `when`(mockDownloadCenter.startDownload(eq(item), any())).thenAnswer{
+            it.getArgument<DownloadListener>(1).onDownloadStateChanged(mockWorkInfo)
+        }
+
+        mainViewModel.downloadEventFlow.test {
+            mainViewModel.downloadImage(item)
+            val result = awaitItem()
+            assertTrue(result is DownloadState.Fail)
+        }
+    }
+
+    @Test
+    @DisplayName("북마크 이미지 추가")
+    fun test_add_bookmark() = runTest {
+        val item = Item("title1", "link", "thumbnail", 0, 0)
+        mainViewModel.handleBookmark(item, true).join()
+        verify(mockRepository).insertBookmarkImage(item)
+    }
+
+    @Test
+    @DisplayName("북마크 이미지 제거")
+    fun test_remove_bookmark() = runTest {
+        val item = Item("title1", "link", "thumbnail", 0, 0)
+        mainViewModel.handleBookmark(item, false).join()
+        verify(mockRepository).deleteBookmarkImage(item)
     }
 }
