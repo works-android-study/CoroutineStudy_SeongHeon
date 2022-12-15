@@ -116,7 +116,7 @@ class MainViewModelTest {
         `when`(mockWorkInfo.outputData).thenReturn(mockOutputData)
 
         `when`(mockDownloadCenter.startDownload(eq(item), any())).thenAnswer{
-            it.getArgument<DownloadListener>(1).onDownloadStateChanged(mockWorkInfo)
+            it.getArgument<(WorkInfo?)->Unit>(1).invoke(mockWorkInfo)
          }
 
         mainViewModel.downloadEventFlow.test {
@@ -136,7 +136,7 @@ class MainViewModelTest {
         `when`(mockWorkInfo.state).thenReturn(WorkInfo.State.ENQUEUED)
 
         `when`(mockDownloadCenter.startDownload(eq(item), any())).thenAnswer{
-            it.getArgument<DownloadListener>(1).onDownloadStateChanged(mockWorkInfo)
+            it.getArgument<(WorkInfo?)->Unit>(1).invoke(mockWorkInfo)
         }
 
         mainViewModel.downloadEventFlow.test {
@@ -158,7 +158,7 @@ class MainViewModelTest {
         `when`(mockWorkInfo.progress).thenReturn(mockOutputData)
 
         `when`(mockDownloadCenter.startDownload(eq(item), any())).thenAnswer{
-            it.getArgument<DownloadListener>(1).onDownloadStateChanged(mockWorkInfo)
+            it.getArgument<(WorkInfo?)->Unit>(1).invoke(mockWorkInfo)
         }
 
         mainViewModel.downloadEventFlow.test {
@@ -178,7 +178,7 @@ class MainViewModelTest {
         `when`(mockWorkInfo.state).thenReturn(WorkInfo.State.FAILED)
 
         `when`(mockDownloadCenter.startDownload(eq(item), any())).thenAnswer{
-            it.getArgument<DownloadListener>(1).onDownloadStateChanged(mockWorkInfo)
+            it.getArgument<(WorkInfo?)->Unit>(1).invoke(mockWorkInfo)
         }
 
         mainViewModel.downloadEventFlow.test {

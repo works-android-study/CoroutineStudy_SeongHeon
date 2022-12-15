@@ -73,30 +73,28 @@ class MainViewModel @Inject constructor(
         }
 
     fun downloadImage(item: Item) {
-        downloadCenter.startDownload(item, object : DownloadListener {
-            override fun onDownloadStateChanged(workInfo: WorkInfo?) {
-                viewModelScope.launch {
-                    val resultUri = workInfo?.outputData?.getString(KEY_FOR_LINK)
-                    val progress = workInfo?.progress?.getInt(KEY_FOR_PROGRESS, 0)
-                    when (workInfo?.state) {
-                        WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> _downloadEventFlow.emit(
-                            DownloadState.Fail
+        downloadCenter.startDownload(item) { workInfo ->
+            viewModelScope.launch {
+                val resultUri = workInfo?.outputData?.getString(KEY_FOR_LINK)
+                val progress = workInfo?.progress?.getInt(KEY_FOR_PROGRESS, 0)
+                when (workInfo?.state) {
+                    WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> _downloadEventFlow.emit(
+                        DownloadState.Fail
+                    )
+                    WorkInfo.State.SUCCEEDED -> _downloadEventFlow.emit(
+                        DownloadState.Complete(
+                            resultUri
                         )
-                        WorkInfo.State.SUCCEEDED -> _downloadEventFlow.emit(
-                            DownloadState.Complete(
-                                resultUri
-                            )
+                    )
+                    WorkInfo.State.ENQUEUED -> _downloadEventFlow.emit(DownloadState.Start)
+                    WorkInfo.State.RUNNING -> _downloadEventFlow.emit(
+                        DownloadState.Progress(
+                            progress
                         )
-                        WorkInfo.State.ENQUEUED -> _downloadEventFlow.emit(DownloadState.Start)
-                        WorkInfo.State.RUNNING -> _downloadEventFlow.emit(
-                            DownloadState.Progress(
-                                progress
-                            )
-                        )
-                        else -> Unit
-                    }
+                    )
+                    else -> Unit
                 }
             }
-        })
+        }
     }
 }
