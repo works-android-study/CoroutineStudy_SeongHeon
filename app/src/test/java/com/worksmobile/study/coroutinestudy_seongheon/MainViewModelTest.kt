@@ -9,7 +9,6 @@ import com.worksmobile.study.coroutinestudy_seongheon.data.ImageRepository
 import com.worksmobile.study.coroutinestudy_seongheon.data.Item
 import com.worksmobile.study.coroutinestudy_seongheon.data.SearchResultType
 import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadCenter
-import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadListener
 import com.worksmobile.study.coroutinestudy_seongheon.download.DownloadState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
