@@ -202,4 +202,10 @@ class MainViewModelTest {
         mainViewModel.handleBookmark(item, false).join()
         verify(mockRepository).deleteBookmarkImage(item)
     }
+
+    @Test
+    @DisplayName("테스트")
+    fun test_pr() = runTest {
+        assertEquals(4, 2 + 2)
+    }
 }
