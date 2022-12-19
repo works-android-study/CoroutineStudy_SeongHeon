@@ -16,8 +16,8 @@ jobs:
         - name: Build with Gradle
           run: ./gradlew build
         - name: Build app and test app
-          run: ./gradlew app:assembleRelease macrobenchmark:assemble
+          run: ./gradlew app:assembleRelease benchmark:assemble
         - name: Download Json File
-          run: mkdir ~/benchmark | adb shell find /sdcard/Download -name "*-benchmarkData.json" | tr -d '\r' | xargs -n1 adb pull |
+          run: find benchmark/build/outputs/connected_android_test_additional_output  -name "*.json"
         - name: evaluate benchmark
           run: node scripts/eval_startup_benchmark_output.js
