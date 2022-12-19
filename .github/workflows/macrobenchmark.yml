@@ -16,4 +16,4 @@ jobs:
       - name: Build app and test app
         run: ./gradlew app:assembleRelease benchmark:assemble
       - name: ls current dir
-        run: ls -al benchmark | ls -al benchmark/build | ls -al benchmark/build/outputs | ls -al benchmark/build/outputs/connected_android_test_additional_output | ls -al benchmark/build/outputs/connected_android_test_additional_output/benchmark | ls -al benchmark/build/outputs/connected_android_test_additional_output/benchmark/connected
+        run: ls -al benchmark | ls -al benchmark/build | ls -al benchmark/build/outputs 
