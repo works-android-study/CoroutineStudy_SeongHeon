@@ -20,6 +20,6 @@ jobs:
         - name: Build app and test app
           run: ./gradlew app:assembleRelease benchmark:assemble
         - name: Download Json File
-          run: find benchmark/build/outputs/connected_android_test_additional_output  -name "*.json"
+          run: find ./benchmark/build/outputs/connected_android_test_additional_output  -name "*.json"
         - name: evaluate benchmark
           run: node scripts/eval_startup_benchmark_output.js
